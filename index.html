@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Predictor</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box; 
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        #result {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            min-height: 2rem;
+        }
+        
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 House Price Predictor</h1>
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="Size">Size (sq ft)</label>
+                <input type="number" id="Size" name="Size" value="1500" min="500" max="10000" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="Bedrooms">Bedrooms</label>
+                <input type="number" id="Bedrooms" name="Bedrooms" value="3" min="1" max="10" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="Bathrooms">Bathrooms</label>
+                <input type="number" id="Bathrooms" name="Bathrooms" value="2" min="1" max="5" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="Age">Age of House (years)</label>
+                <input type="number" id="Age" name="Age" value="10" min="0" max="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="Location">Location</label>
+                <select id="Location" name="Location">
+                    <option value="Urban">Urban</option>
+                    <option value="Suburban">Suburban</option>
+                    <option value="Rural">Rural</option>
+                </select>
+            </div>
+            
+            <button type="submit" id="submitBtn">Predict Price</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // UI Loading state
+            btn.classList.add('loading');
+            btn.textContent = 'Calculating...';
+            resultDiv.textContent = '';
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert numbers
+            data.Size = Number(data.Size);
+            data.Bedrooms = Number(data.Bedrooms);
+            data.Bathrooms = Number(data.Bathrooms);
+            data.Age = Number(data.Age);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = `Estimated Price: $${result.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                } else {
+                    resultDiv.textContent = `Error: ${result.error}`;
+                    resultDiv.style.color = 'red';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Failed to connect to server.';
+                resultDiv.style.color = 'red';
+            } finally {
+                btn.classList.remove('loading');
+                btn.textContent = 'Predict Price';
+            }
+        });
+    </script>
+</body>
+</html>
